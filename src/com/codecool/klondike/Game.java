@@ -41,6 +41,17 @@ public class Game extends Pane {
             card.flip();
             card.setMouseTransparent(false);
             System.out.println("Placed " + card + " to the waste.");
+            if (stockPile.getTopCard() == null) {
+                Iterator<Card> discardedIterator = discardPile.getCards().iterator();
+                while (discardPile.numOfCards() > 0) {
+                    Card discarded = discardedIterator.next();
+                    discarded.moveToPile(stockPile);
+                }
+            }
+        } else if (card.getContainingPile().getPileType() == Pile.PileType.TABLEAU) {
+            if (card.isFaceDown()) {
+                card.flip();
+            }
         }
     };
 
@@ -107,11 +118,13 @@ public class Game extends Pane {
 
     public void refillStockFromDiscard() {
         //TODO
+
         System.out.println("Stock refilled from discard pile.");
     }
 
     public boolean isMoveValid(Card card, Pile destPile) {
         //TODO
+        
         return true;
     }
     private Pile getValidIntersectingPile(Card card, List<Pile> piles) {
@@ -182,13 +195,23 @@ public class Game extends Pane {
 
     public void dealCards() {
         Iterator<Card> deckIterator = deck.iterator();
-        //TODO
+        for (int index = 6; index >= 0; index --) {
+            for (Integer idx = index + 1; idx > 0; idx --) {
+                Card card = deckIterator.next();
+                if (idx.equals(1)) {
+                    card.flip();
+                }
+                deckIterator.remove();
+                tableauPiles.get(index).addCard(card);
+                addMouseEventHandlers(card);
+                getChildren().add(card);              
+            }
+        }
         deckIterator.forEachRemaining(card -> {
             stockPile.addCard(card);
             addMouseEventHandlers(card);
             getChildren().add(card);
         });
-
     }
 
     public void setTableBackground(Image tableBackground) {

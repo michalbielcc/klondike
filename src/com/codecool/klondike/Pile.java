@@ -41,7 +41,11 @@ public class Pile extends Pane {
 
     public int numOfCards() {
         //TODO
-        return 1;
+        int numOfCards = 0;
+        for (Card card : cards) {
+            numOfCards ++;
+        }
+        return numOfCards;
     }
 
     public boolean isEmpty() {

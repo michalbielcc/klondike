@@ -78,7 +78,10 @@ public class Card extends ImageView {
     }
 
     public static boolean isOppositeColor(Card card1, Card card2) {
-        //TODO
+        int cardSuitsSum = card1.getSuit() + card2.getSuit();
+        if (cardSuitsSum == 3 || cardSuitsSum == 7) {
+            return false;
+        }
         return true;
     }
 
@@ -93,6 +96,7 @@ public class Card extends ImageView {
                 result.add(new Card(suit, rank, true));
             }
         }
+        Collections.shuffle(result);
         return result;
     }
 
@@ -122,5 +126,4 @@ public class Card extends ImageView {
             }
         }
     }
-
 }
