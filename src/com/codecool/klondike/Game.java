@@ -31,7 +31,7 @@ public class Game extends Pane {
     private double dragStartX, dragStartY;
     private List<Card> draggedCards = FXCollections.observableArrayList();
 
-    private static double STOCK_GAP = 1;
+    private static double STOCK_GAP = 0;
     private static double FOUNDATION_GAP = 0;
     private static double TABLEAU_GAP = 30;
 
@@ -48,7 +48,7 @@ public class Game extends Pane {
             }
         } else if (card.getContainingPile().getPileType() == Pile.PileType.TABLEAU && card.getContainingPile().getTopCard() == card && card.isFaceDown() == true) {
             card.flip();
-        }
+        } 
     };
 
     private EventHandler<MouseEvent> stockReverseCardsHandler = e -> {
@@ -84,13 +84,17 @@ public class Game extends Pane {
         if (draggedCards.isEmpty())
             return;
         Card card = (Card) e.getSource();
-        Pile pile = getValidIntersectingPile(card, tableauPiles);
+        Pile tableauPile = getValidIntersectingPile(card, tableauPiles);
+        Pile foundationPile = getValidIntersectingPile(card, foundationPiles);
         //TODO
-        if (pile != null) {
-            handleValidMove(card, pile);
+        if (tableauPile != null) {
+            handleValidMove(card, tableauPile);
+        } else if (foundationPile != null) {
+            handleValidMove(card, foundationPile);
         } else {
             draggedCards.forEach(MouseUtil::slideBack);
-            draggedCards = null;
+            draggedCards = FXCollections.observableArrayList();
+            draggedCards.clear();
         }
     };
 
@@ -126,20 +130,31 @@ public class Game extends Pane {
     public boolean isMoveValid(Card card, Pile destPile) {
         //TODO
         if (destPile.getPileType() == PileType.TABLEAU) {
-            if (Card.isOppositeColor(card, destPile.getTopCard()) == true && destPile.getTopCard().getRank() - card.getRank() == 1) {
-                // this works, should return false BUT game hangs when it does (dont know why yet)
-                return true;
-            }
-        } else if (destPile.getPileType() == PileType.FOUNDATION) {
-            if (destPile.isEmpty() == true && card.getRank() == 1) {
-                card.moveToPile(destPile);
+            if (destPile.isEmpty() == false) {
+                if (Card.isOppositeColor(card, destPile.getTopCard()) && Card.isSameSuit(card, destPile.getTopCard()) == false && destPile.getTopCard().getRank() - card.getRank() == 1) {
+                    System.out.println("thats a valid move (to tableau pile)");
+                    System.out.println(Card.isOppositeColor(card, destPile.getTopCard()));
+                    return true;
+                }
             } else {
-                if (card.getRank() - destPile.getTopCard().getRank() == 1) {
-                    card.moveToPile(destPile);
+                if (card.getRank() == 13) {
+                    return true;
                 }
             }
+            
+        } else if (destPile.getPileType() == PileType.FOUNDATION) {
+            if (destPile.isEmpty()) {
+                if (card.getRank() == 1) {
+                    System.out.println("placing ace on foundation");
+                    return true;
+                } 
+            } else if (card.getRank() - destPile.getTopCard().getRank() == 1 && Card.isSameSuit(card, destPile.getTopCard())){
+                System.out.println("placing card on foundation");
+                return true;
+            }
         }
-        return true;
+        System.out.println("bad move");
+        return false;
 
         // STOCK
         // DISCARD
