@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.codecool.klondike.Pile.PileType;
+
 public class Game extends Pane {
 
     private List<Card> deck = new ArrayList<>();
@@ -42,16 +44,10 @@ public class Game extends Pane {
             card.setMouseTransparent(false);
             System.out.println("Placed " + card + " to the waste.");
             if (stockPile.getTopCard() == null) {
-                Iterator<Card> discardedIterator = discardPile.getCards().iterator();
-                while (discardPile.numOfCards() > 0) {
-                    Card discarded = discardedIterator.next();
-                    discarded.moveToPile(stockPile);
-                }
+                refillStockFromDiscard();
             }
-        } else if (card.getContainingPile().getPileType() == Pile.PileType.TABLEAU) {
-            if (card.isFaceDown()) {
-                card.flip();
-            }
+        } else if (card.getContainingPile().getPileType() == Pile.PileType.TABLEAU && card.getContainingPile().getTopCard() == card && card.isFaceDown() == true) {
+            card.flip();
         }
     };
 
@@ -118,14 +114,37 @@ public class Game extends Pane {
 
     public void refillStockFromDiscard() {
         //TODO
-
+        Iterator<Card> discardedIterator = discardPile.getCards().iterator();
+        while (discardPile.numOfCards() > 0) {
+            Card discarded = discardedIterator.next();
+            discarded.flip();
+            discarded.moveToPile(stockPile);
+        }
         System.out.println("Stock refilled from discard pile.");
     }
 
     public boolean isMoveValid(Card card, Pile destPile) {
         //TODO
-        
+        if (destPile.getPileType() == PileType.TABLEAU) {
+            if (Card.isOppositeColor(card, destPile.getTopCard()) == true && destPile.getTopCard().getRank() - card.getRank() == 1) {
+                // this works, should return false BUT game hangs when it does (dont know why yet)
+                return true;
+            }
+        } else if (destPile.getPileType() == PileType.FOUNDATION) {
+            if (destPile.isEmpty() == true && card.getRank() == 1) {
+                card.moveToPile(destPile);
+            } else {
+                if (card.getRank() - destPile.getTopCard().getRank() == 1) {
+                    card.moveToPile(destPile);
+                }
+            }
+        }
         return true;
+
+        // STOCK
+        // DISCARD
+        // FOUNDATION
+        // TABLEAU
     }
     private Pile getValidIntersectingPile(Card card, List<Pile> piles) {
         Pile result = null;
@@ -204,7 +223,7 @@ public class Game extends Pane {
                 deckIterator.remove();
                 tableauPiles.get(index).addCard(card);
                 addMouseEventHandlers(card);
-                getChildren().add(card);              
+                getChildren().add(card);  
             }
         }
         deckIterator.forEachRemaining(card -> {
