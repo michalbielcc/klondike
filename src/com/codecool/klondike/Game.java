@@ -38,6 +38,7 @@ public class Game extends Pane {
 
     private EventHandler<MouseEvent> onMouseClickedHandler = e -> {
         Card card = (Card) e.getSource();
+        PileType sourcePile = card.getContainingPile().getPileType();
         if (card.getContainingPile().getPileType() == Pile.PileType.STOCK) {
             card.moveToPile(discardPile);
             card.flip();
@@ -46,9 +47,21 @@ public class Game extends Pane {
             if (stockPile.getTopCard() == null) {
                 refillStockFromDiscard();
             }
-        } else if (card.getContainingPile().getPileType() == Pile.PileType.TABLEAU && card.getContainingPile().getTopCard() == card && card.isFaceDown() == true) {
-            card.flip();
-        } 
+        } else if (sourcePile == Pile.PileType.TABLEAU && card.getContainingPile().getTopCard() == card) {
+            if (card.isFaceDown()) 
+                card.flip();
+            
+        } if (sourcePile != Pile.PileType.FOUNDATION && sourcePile != Pile.PileType.STOCK) {
+            for (Pile pile : foundationPiles) {
+                if (pile.getTopCard() == null && card.getRank() == 1) {
+                    card.moveToPile(pile);
+                    System.out.println("ace to foundation");
+                } if (pile.getTopCard() != null && card.getRank() - pile.getTopCard().getRank() == 1 && Card.isSameSuit(card, pile.getTopCard())) {
+                    card.moveToPile(pile);
+                    System.out.println("card to foundation");
+                } 
+            }
+        }
     };
 
     private EventHandler<MouseEvent> stockReverseCardsHandler = e -> {
@@ -65,24 +78,32 @@ public class Game extends Pane {
         Pile activePile = card.getContainingPile();
         if (activePile.getPileType() == Pile.PileType.STOCK)
             return;
-        if (activePile.getPileType() == Pile.PileType.TABLEAU)
-            if (card.isFaceDown())
-                return;
-            //if (activePile.getCards().getTopCard() != card)
-
+        if (activePile.getPileType() == Pile.PileType.TABLEAU && card.isFaceDown())
+            return;
         double offsetX = e.getSceneX() - dragStartX;
         double offsetY = e.getSceneY() - dragStartY;
-
+        boolean moreThanOneCard = false;
+        if (activePile.getPileType() == Pile.PileType.TABLEAU && card != activePile.getTopCard() && card.isFaceDown() == false)
+            moreThanOneCard = true;
         draggedCards.clear();
-        draggedCards.add(card);
+        if (moreThanOneCard == true) {
+            for (int index = activePile.getCards().indexOf(card); index < activePile.numOfCards(); index ++) { 
+                draggedCards.add(activePile.getCards().get(index));
+            }
+        }
+        if (moreThanOneCard == false) {
+            draggedCards.add(card);
+        }
+        for (Card card1 : draggedCards) {
+            card1.getDropShadow().setRadius(20);
+            card1.getDropShadow().setOffsetX(10);
+            card1.getDropShadow().setOffsetY(10);
 
-        card.getDropShadow().setRadius(20);
-        card.getDropShadow().setOffsetX(10);
-        card.getDropShadow().setOffsetY(10);
-
-        card.toFront();
-        card.setTranslateX(offsetX);
-        card.setTranslateY(offsetY);
+            card1.toFront();
+            card1.setTranslateX(offsetX);
+            card1.setTranslateY(offsetY);
+        }
+        
     };
 
     private EventHandler<MouseEvent> onMouseReleasedHandler = e -> {
@@ -91,6 +112,7 @@ public class Game extends Pane {
         Card card = (Card) e.getSource();
         Pile tableauPile = getValidIntersectingPile(card, tableauPiles);
         Pile foundationPile = getValidIntersectingPile(card, foundationPiles);
+        Pile sourcePile = card.getContainingPile();
         //TODO
         if (tableauPile != null) {
             handleValidMove(card, tableauPile);
@@ -137,8 +159,6 @@ public class Game extends Pane {
         if (destPile.getPileType() == PileType.TABLEAU) {
             if (destPile.isEmpty() == false) {
                 if (Card.isOppositeColor(card, destPile.getTopCard()) && Card.isSameSuit(card, destPile.getTopCard()) == false && destPile.getTopCard().getRank() - card.getRank() == 1) {
-                    System.out.println("thats a valid move (to tableau pile)");
-                    System.out.println(Card.isOppositeColor(card, destPile.getTopCard()));
                     return true;
                 }
             } else {
@@ -154,11 +174,9 @@ public class Game extends Pane {
                     return true;
                 } 
             } else if (card.getRank() - destPile.getTopCard().getRank() == 1 && Card.isSameSuit(card, destPile.getTopCard())){
-                System.out.println("placing card on foundation");
                 return true;
             }
         }
-        System.out.println("bad move");
         return false;
 
         // STOCK
